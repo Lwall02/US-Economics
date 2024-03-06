@@ -20,6 +20,17 @@ bibliography: references.bib
 
 library(tidyverse)
 library(palmerpenguins)
+library(boot)
+library(broom.mixed)
+library(collapse)
+library(dataverse)
+library(gutenbergr)
+library(janitor)
+library(knitr)
+library(marginaleffects)
+library(modelsummary)
+library(rstanarm)
+library(tidybayes)
 ```
 
 
@@ -85,12 +96,11 @@ Here we briefly describe the Bayesian analysis model used to investigate... Back
 Define $y_i$ as the number of seconds that the plane remained aloft. Then $\beta_i$ is the wing width and $\gamma_i$ is the wing length, both measured in millimeters.  
 
 \begin{align} 
-y_i|\mu_i, \sigma &\sim \mbox{Normal}(\mu_i, \sigma) \\
-\mu_i &= \alpha + \beta_i + \gamma_i\\
+y_i|\pi_i &\sim \mbox{Bern}(\pi_i) \\
+\mbox{logit}(\pi_i) &= \alpha + \beta_1 \times \mbox{gender}_i + \beat_2 \times \mbox{education}_i\\
 \alpha &\sim \mbox{Normal}(0, 2.5) \\
-\beta &\sim \mbox{Normal}(0, 2.5) \\
-\gamma &\sim \mbox{Normal}(0, 2.5) \\
-\sigma &\sim \mbox{Exponential}(1)
+\beta_1 &\sim \mbox{Normal}(0, 2.5) \\
+\beta_2 &\sim \mbox{Normal}(0, 2.5)
 \end{align}
 
 We run the model in R [@citeR] using the `rstanarm` package of @rstanarm. We use the default priors from `rstanarm`.
