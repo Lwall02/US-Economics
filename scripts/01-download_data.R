@@ -1,5 +1,5 @@
 #### Preamble ####
-# Purpose: Downloads and saves the data from [...UPDATE THIS...]
+# Purpose: Downloads and saves the data recorded by the 2020 Cooperative Election Study (CES)
 # Author: Rohan Alexander [...UPDATE THIS...]
 # Date: 11 February 2023 [...UPDATE THIS...]
 # Contact: rohan.alexander@utoronto.ca [...UPDATE THIS...]
@@ -11,16 +11,20 @@
 #### Workspace setup ####
 library(opendatatoronto)
 library(tidyverse)
-# [...UPDATE THIS...]
+library(dataverse)
 
 #### Download data ####
-# [...ADD CODE HERE TO DOWNLOAD...]
-
+ces2020 <-
+  get_dataframe_by_name(
+    filename = "CES20_Common_OUTPUT_vv.csv",
+    dataset = "10.7910/DVN/E9N6PH",
+    server = "dataverse.harvard.edu",
+    .f = read_csv
+  ) |>
+  select(votereg, CC20_410, gender, educ)
 
 
 #### Save data ####
-# [...UPDATE THIS...]
-# change the_raw_data to whatever name you assigned when you downloaded it.
-write_csv(the_raw_data, "inputs/data/raw_data.csv") 
+write_csv(ces2020, "ces2020.csv") 
 
          
