@@ -30,6 +30,8 @@ library(marginaleffects)
 library(modelsummary)
 library(rstanarm)
 library(tidybayes)
+library(arrow)
+library(dplyr)
 ```
 
 
@@ -96,10 +98,10 @@ Define $y_i$ as the number of seconds that the plane remained aloft. Then $\beta
 
 \begin{align} 
 y_i|\pi_i &\sim \mbox{Bern}(\pi_i) \\
-\mbox{logit}(\pi_i) &= \alpha + \beta_1 \times \mbox{gender}_i + \beat_2 \times \mbox{education}_i\\
+\mbox{logit}(\pi_i) &= \alpha + \beta_1 \times \mbox{gender}_i + \beta_2 \times \mbox{education}_i\\
 \alpha &\sim \mbox{Normal}(0, 2.5) \\
-\beta_1 &\sim \mbox{Normal}(0, 2.5) \\
-\beta_2 &\sim \mbox{Normal}(0, 2.5)
+\beta_1 &\sim \mbox{Normal}(0, 5.02) \\
+\beta_2 &\sim \mbox{Normal}(0, 6.34)
 \end{align}
 
 We run the model in R [@citeR] using the `rstanarm` package of @rstanarm. We use the default priors from `rstanarm`.
@@ -121,20 +123,12 @@ Our results are summarized in @tbl-modelresults.
 #| eval: true
 #| warning: false
 #| message: false
-
+#| label: tbl-modelresults
+#| tbl-cap: "Explanatory models of flight time based on wing width and wing length"
 library(rstanarm)
 
 first_model <-
   readRDS(file = here::here("models/first_model.rds"))
-```
-
-```{r}
-#| echo: false
-#| eval: true
-#| label: tbl-modelresults
-#| tbl-cap: "Explanatory models of flight time based on wing width and wing length"
-#| warning: false
-
 modelsummary::modelsummary(
   list(
     "First model" = first_model
@@ -187,6 +181,12 @@ In @fig-ppcheckandposteriorvsprior-2 we compare the posterior with the prior. Th
 #| layout-ncol: 2
 #| fig-cap: "Examining how the model fits, and is affected by, the data"
 #| fig-subcap: ["Posterior prediction check", "Comparing the posterior with the prior"]
+
+analysis_data <- read_parquet(here::here("data/analysis_data/analysis_data.parquet"))
+
+ces2020_reduced <- 
+  analysis_data |> 
+  slice_sample(n = 1000)
 
 pp_check(first_model) +
   theme_classic() +
