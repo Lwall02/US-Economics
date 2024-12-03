@@ -6,7 +6,7 @@ author:
 thanks: "Code and data are available at: https://github.com/Lwall02/US-Economics"
 date: today
 date-format: long
-abstract: "Over the pervious decades, the investor being able to forecast the US stock markey has been a way to become very successful very fast, however we rarely focus on being able to predict how the stock market can forecast the investor. This paper investigates how well hard statistics, in regards to economics, can predict a soft statistic, the consumer confidence index in the stock market for the next year. Using the Federal Reserve Economic Data API and a long time survey managed by the Yale International Center for Finance, we employ a vector autoregression we find eveidence that .... This paper also identifies nuances...."
+abstract: "Over the pervious decades, the investor being able to forecast the US stock market has been a way to become very successful very fast, however we rarely focus on being able to predict how the stock market can forecast the investor. This paper investigates how well hard statistics, in regards to economics, can predict a soft statistic, the consumer confidence index in the stock market for the next year. Using the Federal Reserve Economic Data API and a long time survey managed by the Yale International Center for Finance, we employ a vector autoregression we find eveidence that despite a large effort to find a good predictive model, the best predictor of the consumer confidence index is last year's consumer confidence index. This paper also identifies nuances in the time series of some of the variables used in analysis and shows investor's just how difficult consistent predictive modeling is in economics."
 format: pdf
 number-sections: true
 bibliography: references.bib
@@ -18,27 +18,26 @@ bibliography: references.bib
 #| message: false
 
 library(tidyverse)
-library(palmerpenguins)
-library(boot)
-library(broom.mixed)
-library(collapse)
-library(gutenbergr)
 library(janitor)
 library(knitr)
-library(marginaleffects)
 library(modelsummary)
 library(rstanarm)
-library(tidybayes)
 library(arrow)
 library(dplyr)
+library(fredr)
+library(vars)
 ```
 
 
 # Introduction
 
-In recent decades, 
+In recent decades, a well-known goal of statisticians in economics has been to develop reliable predictive models for various aspects of the stock market or the U.S. economy. Using consistently available economic indicators such as the unemployment rate or the VIX, these models aim to forecast whether the market will rise, fall, or remain stable. However, less attention has been given to the inverse problem: using hard data from the stock market or the economy to predict how investors will feel.
 
-The remainder of this paper is structured as follows. @sec-data....
+Investors often rely on external data and mathematical models to guide their decisions, substituting raw confidence with quantifiable evidence to validate their instincts. The investor hopes that their own personal biases are avoided in relying on such methods however I argue that this is unavoidable. In this paper, I take the opposite approach: how can the stock market forecast the investor? I aim to use economic and stock market data not to predict market movements directly, but to forecast investor sentiment. By understanding how investors might feel, one can anticipate their likely reactions to market conditions. This information provides a strategic advantage, enabling investors to predict the behavior of others and act accordingly to capitalize on those expectations. Instead of deriving predictions purely from economic data, this paper focuses on deriving predictions based on the projected confidence of investors.
+
+The estimand of this paper is the consumers' confidence in the US stock market one year from now. In other words, and which will be described in detail later, we want to be able to find the best predictor of the percentage of the population that is confident that the US stock market will increase one year from today. 
+
+The remainder of this paper is structured as follows. @sec-data discusses the raw data, cleaning process, variables of interest, and offers visual representations of the data through tables and graphs. @sec-model introduces and justifies the vector autoregression model used in the analysis of the data in predicting the relationship between variables as well as the confidence index. @sec-results deals with analyzing the trends and correlations showcased by the model in more detail. @sec-discussion discusses the real-world implications of the results uncovered in the prior sections, and finally @sec-limitations discusses the limitations and weaknesses of the analysis conducted, as well as the next steps that could be taken to improve the overall reliability of the paper. In the Appendix you can find additional information regarding the model details as well as a discussion of the survey used as our training and test data.
 
 
 
