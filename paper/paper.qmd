@@ -26,6 +26,8 @@ library(arrow)
 library(dplyr)
 library(fredr)
 library(vars)
+
+full_data <- read_parquet(here::here("data/analysis_data/analysis_data.parquet"))
 ```
 
 
@@ -41,68 +43,140 @@ The remainder of this paper is structured as follows. @sec-data discusses the ra
 
 
 
-# Data {#sec-data}
+# Data and Measurement {#sec-data}
 
-Some of our data is of penguins (@fig-bills), from @palmerpenguins.
+This paper uses six datasets to begin its analysis. Five datasets are provided through the Federal Reserve Bank of St. Louis, specifically through the Federal Reserve Economic Data (FRED) API, and one dataset is provided by the Yale International Center for Finance. The FRED API provides easy access to all of the Federal Reserve Bank of St. Louis's datasets which include current and historical financial data for the US all around the world. In particular in this paper we obtain datasets regarding core consumer price index, real GDP growth rate, the VIX valuation, the federal funds effective rate, and the unemployment rate. From Yale's International Center for Finance we obtain a dataset regarding the estimated individual and institutional confidence index in the US stock market.
 
+All data analysis was done through R [@citeR] with the aid of the following packages: `tidyverse` [@citetidyverse], `dplyr` [@dplyr], `ggplot2` [@citeggplot2], `knitr` [@citeknitr], `vars` [@vars], `arrow` [@arrow], `kableExtra` [@citekableExtra], and `janitor` [@citejanitor]. Moreover, the FRED API was accessed using the package `fredr` [@fredr] and the shiny web app associated with this paper was made with the aid of the `shiny` package [@citeshiny].
+
+## FRED API
+In order to first obtain data from the Federal Reserve Bank of St. Louis, we were able to use the `fredr` package to access the API and easily obtain any FRED datasets. In order to use their API, we first needed to create an API key through the FRED's website [FREDwebsite]. After saving and storing the key, we can then use the `fredr` package to obtain the data. We use a code associated with each and every dataset on the FRED website to quickly download the dataset through R. We can further specify the dates we are looking for as well as the frequency of the data. To have consistent data across all variables, we use quarterly data in the paper. This gives us data for each year on January 1, April 1, July 1, and October 1.
+
+The process of obtaining the data from the FRED API is the exact same for each of the five FRED datasets. Below is a discussion of the value and measurement of the dataset.
+
+### Real US GDP Growth Rate and Measurement
+The Real Growth Domestic Product (GDP) growth rate measures how the inflation-adjusted value of goods and services produced in an economy changes over a specific period, typically from one quarter to the next or year-over-year. It’s one of the most widely used indicators to gauge economic performance. In this paper, we downloaded the US's Real GDP dataset from FRED and obtained the percent change of each quarter's real GDP to that of one year ago. Specifically we calculated (Real GDP in current quarter - Real GDP in quarter 1 year ago)/(Real GDP in quarter 1 year ago). 
+
+The US's Real GDP data we obtain from FRED is in units of billions of chained 2017 dollars, seasonally adjusted annual rate. What this means is that all data in dollars from this dataset is expressed as their purchasing power in 2017, hence adjusted for inflation up to 2017. The annual rate simply means that the GDP listed for each quarter is the estimated or extended annual rate. Since we are looking at the growth rate, the data in this paper is in percents and we do not need to focus on the units of Real GDP.
+
+We can see the Real GDP Growth Rate for all years considered in this dataset below @fig-gdp-raw
 ```{r}
-#| label: fig-bills
-#| fig-cap: Bills of penguins
+#| label: fig-gdp-raw
+#| fig-cap: The quarterly US Real GDP Growth Rate for 1990 to 2024 measured in percent change compared to that of one year ago. 
 #| echo: false
 
-ggplot(penguins, aes(x = island, fill = species)) +
-  geom_bar(alpha = 0.8) +
-  scale_fill_manual(values = c("darkorange","purple","cyan4"),
-                    guide = "none") +
-  theme_minimal() +
-  facet_wrap(~species, ncol = 1) +
-  coord_flip()
+gdp_ts <- as.ts(full_data$gdp_growth)
+plot.ts(gdp_ts, 
+        main = "Time Series of Quarterly GDP Growth Rate From 1990 to 2024",     # Title of the plot
+        xlab = "Time (Quarters)",            # Label for the x-axis
+        ylab = "GDP Growth Rate (%)")     # Label for the y-axis```
 ```
 
-Talk more about it.
+### Core CPI Data and Measurement
+The Core Consumer Price Index (Core CPI) is a measure of inflation that tracks the change in prices for a basket of goods and services, excluding food and energy items. Food and energy prices tend to be highly volatile and can fluctuate significantly due to factors like weather conditions, geopolitical events, or supply disruptions (e.g., oil price shocks or crop failures). By excluding these items, Core CPI aims to provide a clearer picture of underlying, long-term inflation trends that are not distorted by these short-term price movements. Core CPI is one of the most widely used measures of inflation because it is considered a more reliable indicator of the general inflation trend. Economists and policymakers often use Core CPI to gauge inflation pressures that are likely to affect the economy in the long term.
 
-And also planes (@fig-planes). (You can change the height and width, but don't worry about doing that until you have finished every other aspect of the paper - Quarto will try to make it look nice and the defaults usually work well once you have enough text.)
+Core CPI is calculated using the same methodology as the overall CPI but with food and energy prices removed. The Bureau of Labor Statistics (BLS) collects data on prices from a wide range of goods and services purchased by urban consumers and lists the core cpi as the percent increase of the typical basket of these goods and services from a listed baseline year. In this case 1984 is the baseline year so a core cpi of 264 implies that the typical basket of goods and services is 164% more expensive than it was is 1984.
 
+We can see the Core CPI for all years considered in this dataset below @fig-cpi-raw
 ```{r}
-#| label: fig-planes
-#| fig-cap: Relationship between wing length and width
+#| label: fig-cpi-raw
+#| fig-cap: The quarterly Core CPI for 1990 to 2024 measured as an index of chnage from the baseline year of 1984. 
 #| echo: false
-#| warning: false
-#| message: false
 
-analysis_data <- read_csv(here::here("data/analysis_data/analysis_data.csv"))
-
-analysis_data |> 
-  ggplot(aes(x = width, y = length)) +
-  geom_point(alpha = 0.8) +
-  theme_minimal() +
-  labs(x = "Wing width (mm)",
-       y = "Wing length (mm)")
+cpi_ts <- as.ts(full_data$core_cpi)
+plot.ts(cpi_ts, 
+        main = "Time Series of Quarterly Core CPI From 1990 to 2024",     # Title of the plot
+        xlab = "Time (Quarters)",            # Label for the x-axis
+        ylab = "Core Consumer Price Index")     # Label for the y-axis```
 ```
 
-Talk way more about it. 
+### Unemployment Rate and Measurement
+The unemployment rate measures the number of unemployed person in the US as a percentage of the labor force. Labor force data are restricted to people 16 years of age and older, who currently reside in 1 of the 50 states or the District of Columbia, who do not reside in institutions (e.g., penal and mental facilities, homes for the aged), and who are not on active duty in the Armed Forces.
+
+We can see the Unemployment Rate for all years considered in this dataset below @fig-unemp-raw
+```{r}
+#| label: fig-unemp-raw
+#| fig-cap: The quarterly Unemployment Rate for 1990 to 2024 measured as a percent of the labor force. 
+#| echo: false
+
+unemp_ts <- as.ts(full_data$unemp)
+plot.ts(unemp_ts, 
+        main = "Time Series of the US Unemployment Rate From 1990 to 2024",     # Title of the plot
+        xlab = "Time (Quarters)",            # Label for the x-axis
+        ylab = "Percent of Labor Force that is Unemployed")     # Label for the y-axis```
+```
+
+### Federal Funds Effective Rate
+The Federal Funds Rate is the interest rate at which depository institutions, such as commercial banks, lend reserves to each other overnight. These reserves are balances held at Federal Reserve Banks. When a bank has surplus reserves, it lends to other banks that need additional liquidity to meet reserve requirements. The rate at which these transactions occur is determined through negotiations between the lending and borrowing banks. The Federal Funds Effective Rate is the weighted average of all such rates across the market, and while it is largely influenced by market forces, the Federal Reserve may manipulate it to adjust the rate to its target. This target is determined by the Federal Open Market Committee (FOMC), which meets eight times a year to assess economic conditions and set the federal funds rate target. The rate is a central tool for influencing the broader economy, impacting the cost of borrowing and the level of liquidity in the financial system.
+
+The Federal Reserve manipulates the federal funds rate through buying or selling government bonds to influence the liquidity available in the market. If the economy is overheating, the FOMC may sell government bonds to reduce liquidity and raise the federal funds rate. On the other hand, if the economy is sluggish, the FOMC may buy bonds to increase liquidity and lower the federal funds rate, encouraging borrowing and investment. The federal funds rate is the most important interest rate in the U.S. financial system, as it influences other rates like, mortgages, loans, and savings rates. Changes in the federal funds rate can affect consumer wealth, confidence, and overall economic activity, making it a critical tool for the Federal Reserve in managing the economy's growth while maintaining price stability and maximum employment, as mandated by Congress.
+
+We can see the Unemployment Rate for all years considered in this dataset below @fig-eff-raw
+```{r}
+#| label: fig-eff-raw
+#| fig-cap: The quarterly Federal Funds Effective Rate from 1990 to 2024. 
+#| echo: false
+
+eff_ts <- as.ts(full_data$eff_rate)
+plot.ts(eff_ts, 
+        main = "Time Series of the quarterly Federal Funds Effective Rate From 1990 to 2024",     # Title of the plot
+        xlab = "Time (Quarters)",            # Label for the x-axis
+        ylab = "Percent")     # Label for the y-axis```
+```
+
+### The VIX Dataset and Measurement
+The VIX (Volatility Index) measures the market’s expectation of near-term volatility based on the prices of stock index options. Often referred to as the "fear gauge," the VIX reflects the market's consensus on the level of volatility expected in the coming 30 days. It is calculated by the Chicago Board Options Exchange (CBOE) using the prices of options on the S&P 500 index. The VIX is expressed as an annualized percentage, which indicates the expected volatility (in percentage points) over the next 30 days. The formula to calculate the VIX incorporates the prices of both calls and puts, weighing options with different strike prices and maturities. Higher VIX values indicate a higher expected volatility, signaling increased uncertainty or fear in the market, while lower values suggest stability or confidence. As such, the VIX is widely used by investors, analysts, and policymakers as a gauge of market sentiment, helping to assess the potential for market swings and guide investment decisions.
+
+We can see the VIX for all years considered in this dataset below @fig-vix-raw
+```{r}
+#| label: fig-vix-raw
+#| fig-cap: The quarterly VIX from 1990 to 2024. 
+#| echo: false
+
+vix_ts <- as.ts(full_data$vix)
+plot.ts(vix_ts, 
+        main = "Time Series of the quarterly VIX From 1990 to 2024",     # Title of the plot
+        xlab = "Time (Quarters)",            # Label for the x-axis
+        ylab = "Index")     # Label for the y-axis```
+```
+
+## Yale International Center for Finance
+The sixth and last dataset used in this paper comes from the Yale International Center for Finance (ICF). Specifically it comes from survey data that the ICF publishes coming from a longstanding survey of wealthy investors and institutions. From 1989 to 1990 the survey was taken from a sample of investors purchased from a survey company called W.S. Ponton, Inc. and in 1999 the sample changed to a survey of wealth American Investors purchased from Survey Sampling, Inc. Both individuals and instituions were included in the sample and their responses are recorded separately. 
+
+Starting in July 2001, the beginning date of analysis for this paper, the survey was given monthly and the results were the average of the previous six months of surveys. For example the number for January 2018 is an average of results from surveys between August 2017 and January 2018. We go into more detail about the questions and calculation of the answers in the next section as well as in the appendix. 
+
+### US Confidence 
+The data for the estimate of the US confidence index in the stock market for the next year comes from the survey data released by the ICF. Specifically, the index is the percent of people who said that the DOW would increase one year from taking the survey. This question was always asked on the survey from 1989 to present. The question is offered to both institutions and wealthy investors, however they consistently display similar findings. 
+
+Below we can see the one year confidence index for institutions @fig-conf-raw
+```{r}
+#| label: fig-conf-raw
+#| fig-cap: The quarterly 1 year confidence index from 2001 to 2020. 
+#| echo: false
+
+less_data <- full_data |>
+  filter(date >= as.Date("2001-04-01") & date <= as.Date("2020-01-01"))
+
+conf_ts <- as.ts(less_data$inst_index_value)
+plot.ts(conf_ts, 
+        main = "Time Series of the 1 Year Confidence Index From 2001 to 2020",     # Title of the plot
+        xlab = "Time (Quarters)",            # Label for the x-axis
+        ylab = "Index")     # Label for the y-axis```
+```
 
 
+# Model {#sec-model}
 
-# Model
+As the purpose of this paper is to investigate the relationship between various economic factors and the U.S. consumer confidence index in the stock market, we will employ a model that allows us to examine how these factors contribute to predicting investor sentiment over time. Specifically, we aim to understand how variables such as GDP growth, unemployment rates, the VIX, and the core CPI interact with the consumer confidence index. By using this information, we will develop a predictive model that estimates the future confidence index based on current and past economic data. The goal is to determine whether these economic indicators are effective predictors of consumer confidence, or if other factors beyond the economic data—such as investor psychology or external market events—play a larger role in shaping market sentiment.
 
-The goal of our modelling strategy is twofold. Firstly,...
-
-Here we briefly describe the Bayesian analysis model used to investigate... Background details and diagnostics are included in [Appendix -@sec-model-details].
+Here we briefly describe the vector auto regression (VAR) model used to investigate predictors of market confidence. Background details and diagnostics are included in [Appendix -sec-model-details].
 
 ## Model set-up
 
-Define $y_i$ as the number of seconds that the plane remained aloft. Then $\beta_i$ is the wing width and $\gamma_i$ is the wing length, both measured in millimeters.  
+The particular model that this paper will utilize is a vector auto regression model of consumer one-year confidence index as a function of the economic variables present in our analysis. In particular, the model is as follows:
 
-\begin{align} 
-y_i|\pi_i &\sim \mbox{Bern}(\pi_i) \\
-\mbox{logit}(\pi_i) &= \alpha + \beta_1 \times \mbox{gender}_i + \beta_2 \times \mbox{education}_i\\
-\alpha &\sim \mbox{Normal}(0, 2.5) \\
-\beta_1 &\sim \mbox{Normal}(0, 5.02) \\
-\beta_2 &\sim \mbox{Normal}(0, 6.34)
-\end{align}
 
-We run the model in R [@citeR] using the `rstanarm` package of @rstanarm. We use the default priors from `rstanarm`.
+We run the model in R [@citeR] using the `rstanarm` package of rstanarm. We use the default priors from `rstanarm`.
 
 
 ### Model justification
@@ -112,34 +186,15 @@ We expect a positive relationship between the size of the wings and time spent a
 We can use maths by including latex between dollar signs, for instance $\theta$.
 
 
-# Results
+# Results {#sec-results}
 
-Our results are summarized in @tbl-modelresults.
-
-```{r}
-#| echo: false
-#| eval: true
-#| warning: false
-#| message: false
-#| label: tbl-modelresults
-#| tbl-cap: "Explanatory models of flight time based on wing width and wing length"
-library(rstanarm)
-
-first_model <-
-  readRDS(file = here::here("models/first_model.rds"))
-modelsummary::modelsummary(
-  list(
-    "First model" = first_model
-  ),
-  statistic = "mad",
-  fmt = 2
-)
-```
+Our results are summarized in tbl-modelresults.
 
 
 
 
-# Discussion
+
+# Discussion {#sec-discussion}
 
 ## First discussion point {#sec-first-point}
 
@@ -149,7 +204,7 @@ If my paper were 10 pages, then should be be at least 2.5 pages. The discussion 
 
 ## Third discussion point
 
-## Weaknesses and next steps
+## Weaknesses and next steps {#sec-limitations}
 
 Weaknesses and next steps should also be included.
 
@@ -166,57 +221,11 @@ Weaknesses and next steps should also be included.
 
 ## Posterior predictive check
 
-In @fig-ppcheckandposteriorvsprior-1 we implement a posterior predictive check. This shows...
 
-In @fig-ppcheckandposteriorvsprior-2 we compare the posterior with the prior. This shows... 
-
-```{r}
-#| eval: true
-#| echo: false
-#| message: false
-#| warning: false
-#| label: fig-ppcheckandposteriorvsprior
-#| layout-ncol: 2
-#| fig-cap: "Examining how the model fits, and is affected by, the data"
-#| fig-subcap: ["Posterior prediction check", "Comparing the posterior with the prior"]
-
-analysis_data <- read_parquet(here::here("data/analysis_data/analysis_data.parquet"))
-
-ces2020_reduced <- 
-  analysis_data |> 
-  slice_sample(n = 1000)
-
-pp_check(first_model) +
-  theme_classic() +
-  theme(legend.position = "bottom")
-
-posterior_vs_prior(first_model) +
-  theme_minimal() +
-  scale_color_brewer(palette = "Set1") +
-  theme(legend.position = "bottom") +
-  coord_flip()
-```
 
 ## Diagnostics
 
-@fig-stanareyouokay-1 is a trace plot. It shows... This suggests...
 
-@fig-stanareyouokay-2 is a Rhat plot. It shows... This suggests...
-
-```{r}
-#| echo: false
-#| eval: true
-#| message: false
-#| warning: false
-#| label: fig-stanareyouokay
-#| fig-cap: "Checking the convergence of the MCMC algorithm"
-#| fig-subcap: ["Trace plot", "Rhat plot"]
-#| layout-ncol: 2
-
-plot(first_model, "trace")
-
-plot(first_model, "rhat")
-```
 
 
 
