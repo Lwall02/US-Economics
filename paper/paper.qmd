@@ -1,13 +1,12 @@
 ---
-title: "My title"
-subtitle: "My subtitle if needed"
+title: "Hard Statistics in Economics: Investigating Economic Drivers in Individual Confidence in the DOW in the US"
+subtitle: "A time series analysis of economic trends and their effect on stock market confidence."
 author: 
-  - First author
-  - Another author
-thanks: "Code and data are available at: LINK."
+  - Liam Wall
+thanks: "Code and data are available at: https://github.com/Lwall02/US-Economics"
 date: today
 date-format: long
-abstract: "First sentence. Second sentence. Third sentence. Fourth sentence."
+abstract: "Over the pervious decades, the investor being able to forecast the US stock markey has been a way to become very successful very fast, however we rarely focus on being able to predict how the stock market can forecast the investor. This paper investigates how well hard statistics, in regards to economics, can predict a soft statistic, the consumer confidence index in the stock market for the next year. Using the Federal Reserve Economic Data API and a long time survey managed by the Yale International Center for Finance, we employ a vector autoregression we find eveidence that .... This paper also identifies nuances...."
 format: pdf
 number-sections: true
 bibliography: references.bib
@@ -37,7 +36,7 @@ library(dplyr)
 
 # Introduction
 
-You can and should cross-reference sections and sub-sections. We use @citeR and @rohan.
+In recent decades, 
 
 The remainder of this paper is structured as follows. @sec-data....
 
