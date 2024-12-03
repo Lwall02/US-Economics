@@ -169,29 +169,93 @@ plot.ts(conf_ts,
 
 As the purpose of this paper is to investigate the relationship between various economic factors and the U.S. consumer confidence index in the stock market, we will employ a model that allows us to examine how these factors contribute to predicting investor sentiment over time. Specifically, we aim to understand how variables such as GDP growth, unemployment rates, the VIX, and the core CPI interact with the consumer confidence index. By using this information, we will develop a predictive model that estimates the future confidence index based on current and past economic data. The goal is to determine whether these economic indicators are effective predictors of consumer confidence, or if other factors beyond the economic data—such as investor psychology or external market events—play a larger role in shaping market sentiment.
 
-Here we briefly describe the vector auto regression (VAR) model used to investigate predictors of market confidence. Background details and diagnostics are included in [Appendix -sec-model-details].
+Here we briefly describe the vector auto regression (VAR) model used to investigate predictors of market confidence. Background details and diagnostics are included in the Appendix.
 
 ## Model set-up
 
 The particular model that this paper will utilize is a vector auto regression model of consumer one-year confidence index as a function of the economic variables present in our analysis. In particular, the model is as follows:
 
+\begin{align} 
+confidence_{t} = \beta_0 + \beta_1 gdp_{t-1} + \beta_2 cpi_{t-1} + \beta_3 unemployment_{t-1} \\
++ \beta_4 federal-rate_{t-1} + \beta_5 vix_{t-1} + \beta_6 confidence_{t-1}
+\end{align}
 
-We run the model in R [@citeR] using the `rstanarm` package of rstanarm. We use the default priors from `rstanarm`.
+In the above model:
 
+- $\beta_0$ is the coefficient for the intercept.
+- $\beta_1$ is the coefficient for the predicted change in confidence index given a one unit increase in the GDP Growth Rate at time $t-1$
+- $\beta_2$ is the coefficient for the predicted change in confidence index given a one unit increase in the Core CPI at time $t-1$ 
+- $\beta_3$ is the coefficient for the predicted change in confidence index given a one unit increase in the Unemployment Rate at time $t-1$
+- $\beta_4$ is the coefficient for the predicted change in confidence index given a one unit increase in the Federal Funds Effective Rate at time $t-1$
+- $\beta_5$ is the coefficient for the predicted change in confidence index given a one unit increase in the VIX at time $t-1$
+- $\beta_6$ is the coefficient for the predicted change in confidence index given a one unit increase in the One-Year Confidence Index at time $t-1$
+
+Note that we use `vars` to run the regression. Since all of the variables are a function of time, we are running a model on a multivariate time series. Discussion of choosing the lag as well as making sure the input data is appropriate for such a model is all in the appendix.
 
 ### Model justification
 
-We expect a positive relationship between the size of the wings and time spent aloft. In particular...
+The variables chosen for this model—GDP growth rate, core CPI, unemployment rate, VIX, federal funds effective rate, and previous confidence index values—are all grounded in economic theory and literature regarding their influence on consumer confidence. The confidence index reflects individuals' expectations about the stock market, specifically their belief that the Dow Jones will increase over the next year, making it closely linked to these macroeconomic variables. 
 
-We can use maths by including latex between dollar signs, for instance $\theta$.
+We expect a linear relationship between these variables and the confidence index. Specifically, we anticipate that higher GDP growth and a lower unemployment rate will be associated with higher confidence levels, as they signal economic stability and opportunities. Conversely, increases in the VIX and federal funds rate are expected to reduce confidence, as they indicate higher uncertainty or a tightening economic environment. 
 
+We chose the VAR model because it is able to model the time dependent interplay of multiple interdependent variables. The variables in this analysis are closely related with one another, as well as being dependent on time, and we wanted a model that could reflect this. Not only do the variables effect each other, but more importantly they effect themselves. As the percentage of people who lose confidence in the market increases it is more than likely that percentage will continue to increase as time continues. A similar argument can be made for each of the other variables. That is why we chose to incorporate a lag into the model, seeing that the the values at previous times do have an effect on the value currently.
 
 # Results {#sec-results}
+## Model Coefficients
+After running the regression based on the above model, we receive the following coefficient values as showcased in @tbl-summary. 
+```{r}
+#| label: tbl-summary
+#| tbl-cap: Model summary of the predicted relation of consumer confidence in the stock market and several economic factors..
+#| echo: false
+#| warning: false
+#| message: false
+library(modelsummary)
+# Read Model
+analysis_model <- readRDS(here::here("models/best_var_model.rds"))
+summary(analysis_model)
 
-Our results are summarized in tbl-modelresults.
+```
+We can see that in the last estimate of coefficients, the VAR model estimates the lagged coefficients for each of the variables including the lagged one-year confidence index as a predictor. What we find it rather surprising that increases in unemployment positively correlate with increases in the stock market confidence. All other variables have less of an effect except for the lagged one-year confidence interval. In fact, it is the only statistically significant finding from this model with a p-value much less than 0.05. Thus, this model tells us that the previous quarter's confidence index is the biggest predictor of the currect confidence index. Followed by the unemployment rate as the second most likely predictor. 
 
+## Actual vs. Predicted Confidence Indexes
 
+In order to determine predictive performance of this model is, we can look at the predicted confidence indexes as given by the VAR model compared to the observed confidence indexes we purposely omitted form the dataset. This can be seen in @fig-predicted.
 
+```{r}
+#| label: fig-predicted
+#| fig-cap: Model summary of the predicted relation of consumer confidence in the stock market and several economic factors..
+#| echo: false
+#| warning: false
+#| message: false
+
+# Predict values using the VAR model
+predictions <- predict(analysis_model, n.ahead = 8)
+
+# Extract the predicted and actual values for the Institutional Confidence Index
+predicted_values <- predictions$fcst$inst_conf_index[, "fcst"]
+actual_values <- tail(full_data$inst_index_value, length(predicted_values))
+
+# Combine the data into a data frame
+results_df <- data.frame(
+  Time = seq_along(predicted_values),
+  Predicted = predicted_values,
+  Actual = actual_values
+)
+
+# Calculate RMSE
+rmse <- sqrt(mean((results_df$Predicted - results_df$Actual)^2))
+
+# Add a row for RMSE
+results_with_rmse <- rbind(
+  results_df,
+  data.frame(Time = "RMSE", Predicted = rmse, Actual = NA)
+)
+
+# Print the table
+print(results_with_rmse)
+
+```
+Although this does not seem to be the most accurate model predictions, considering how nosiy and volatil
 
 
 # Discussion {#sec-discussion}
