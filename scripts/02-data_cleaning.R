@@ -1,7 +1,7 @@
 #### Preamble ####
-# Purpose: Cleans the raw election information data recorded by the 2020 Cooperative Election Study (CES)
+# Purpose: Cleans the raw FRED API and Yale ICF data
 # Author: Liam Wall
-# Date: 5 March 2024
+# Date: 3 Decemeber 2024
 # Contact: liam.wall@mail.utoronto.ca
 # License: MIT
 
@@ -9,6 +9,7 @@
 library(tidyverse)
 library(dplyr)
 library(arrow)
+
 
 #### Clean data ####
 
@@ -76,4 +77,5 @@ full_data <- economic_data |>
 
 
 #### Save data ####
+write_csv(full_data, "data/analysis_data/analysis_data.csv")
 write_parquet(full_data, "data/analysis_data/analysis_data.parquet")
