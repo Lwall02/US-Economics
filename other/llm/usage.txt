@@ -1193,3 +1193,154 @@ Federal Funds Rate generally decreases over time, consistent with economic polic
 VIX is generated with random noise and spikes to simulate market uncertainty during crises.
 Confidence Index is influenced by the other variables, showing how market sentiment might evolve with economic conditions.
 This simulation captures the essence of the variables you're studying and the time frame you're interested in. You can tweak the parameters to reflect different assumptions about the economy. Let me know if you'd like to adjust the model or any of the data characteristics.
+
+
+
+Write tests to run on the analysis data. This is the real version of the data you just simulated. Good tests are things like all numeric, all dates are correct and in the right time range(1989 to present), there are no random zeros, etc.
+ChatGPT said:
+
+ChatGPT
+Here is a set of comprehensive tests to ensure the integrity and correctness of your real dataset, particularly focused on economic data spanning from 1989 to the present. You can implement these tests in R.
+
+General Structure for Tests in R
+Check for Numeric Columns: Ensure all columns that are supposed to be numeric are numeric.
+Check Date Column: Verify that dates fall within the specified range.
+Check for Missing Data: Ensure there are no NAs in critical columns.
+Check for Unexpected Zeros: Ensure there are no zeros in columns where they don’t make sense (e.g., inflation rate, interest rate).
+Check Column Ranges: Verify that values fall within reasonable economic ranges.
+Check Duplicated Rows: Ensure there are no duplicated rows.
+Check Consistency of Quarters: Ensure the dataset has consistent and complete quarterly data without gaps.
+Here’s the R code for these tests:
+
+# Load libraries
+library(dplyr)
+library(lubridate)
+library(testthat)
+
+# Load your dataset (replace 'your_data.csv' with the actual file name)
+data <- read.csv("your_data.csv")
+
+# Define the tests
+test_results <- list()
+
+# 1. Test if all required columns are numeric
+test_results$numeric_columns <- test_that("All numeric columns are numeric", {
+  numeric_columns <- c("Core_CPI", "GDP_Growth", "Unemployment_Rate", "Fed_Funds_Rate", "VIX", "Confidence_Index")
+  expect_true(all(sapply(data[numeric_columns], is.numeric)))
+})
+
+# 2. Test if date column is in the correct format and range
+test_results$date_column <- test_that("Date column is correct and within range", {
+  expect_true("Date" %in% names(data))
+  expect_true(all(!is.na(as.Date(data$Date)))) # Check valid dates
+  date_range <- range(as.Date(data$Date))
+  expect_true(date_range[1] >= as.Date("1989-01-01"))
+  expect_true(date_range[2] <= Sys.Date()) # Dates should not exceed today
+})
+
+# 3. Test for missing values
+test_results$missing_values <- test_that("No missing values in critical columns", {
+  critical_columns <- c("Date", "Core_CPI", "GDP_Growth", "Unemployment_Rate", "Fed_Funds_Rate", "VIX", "Confidence_Index")
+  expect_true(all(complete.cases(data[critical_columns])))
+})
+
+# 4. Test for unexpected zeros in key columns
+test_results$unexpected_zeros <- test_that("No unexpected zeros in key columns", {
+  key_columns <- c("Core_CPI", "GDP_Growth", "Unemployment_Rate", "Fed_Funds_Rate", "VIX")
+  for (col in key_columns) {
+    expect_true(all(data[[col]] != 0))
+  }
+})
+
+# 5. Test if column values are within reasonable ranges
+test_results$value_ranges <- test_that("Column values are within reasonable ranges", {
+  expect_true(all(data$Core_CPI >= 0 & data$Core_CPI <= 10))
+  expect_true(all(data$GDP_Growth >= -10 & data$GDP_Growth <= 10))
+  expect_true(all(data$Unemployment_Rate >= 0 & data$Unemployment_Rate <= 25))
+  expect_true(all(data$Fed_Funds_Rate >= 0 & data$Fed_Funds_Rate <= 20))
+  expect_true(all(data$VIX >= 0 & data$VIX <= 100))
+  expect_true(all(data$Confidence_Index >= 0 & data$Confidence_Index <= 100))
+})
+
+# 6. Test for duplicated rows
+test_results$duplicates <- test_that("No duplicated rows exist", {
+  expect_true(nrow(data) == nrow(distinct(data)))
+})
+
+# 7. Test for consistent quarterly data
+test_results$quarterly_consistency <- test_that("Dates represent consistent quarterly data", {
+  dates <- as.Date(data$Date)
+  quarters <- unique(format(dates, "%Y-Q%q"))
+  expect_true(length(quarters) == length(dates)) # Each quarter should be unique
+  expect_true(all(diff(dates) >= 90)) # Quarters should not overlap
+})
+
+# Summarize the results
+summary_results <- sapply(test_results, function(result) inherits(result, "testthat_results") && result$passed)
+print(summary_results)
+Explanation of Tests
+All Numeric Columns: Ensures columns like Core_CPI and GDP_Growth are numeric, as expected.
+Date Range: Verifies that all dates fall between 1989 and the present.
+No Missing Values: Ensures there are no NAs in critical columns.
+Unexpected Zeros: Checks for zeros in key variables where they don’t make sense.
+Value Ranges: Ensures values are within plausible ranges based on historical data.
+No Duplicates: Prevents duplicated rows, which could bias analysis.
+Quarterly Consistency: Checks for complete and consistent quarterly data.
+How to Run the Tests
+Save the dataset as your_data.csv.
+Run the script in your R environment.
+Review the summary_results for a pass/fail indication of each test.
+These tests will help ensure the dataset is clean, reliable, and ready for analysis. Let me know if you'd like further clarification or enhancements!
+
+
+
+
+
+
+You said:
+The test for consistent quarterly data fails. The unique(format.. line doesn't work
+ChatGPT said:
+
+ChatGPT
+You're correct—the unique(format(dates, "%Y-Q%q")) approach doesn’t check quarterly consistency directly; it merely identifies unique year-quarter combinations. For verifying that quarterly data is consistent and complete, we need a more rigorous approach.
+
+Here’s the corrected and improved test for consistent quarterly data:
+
+Revised Quarterly Consistency Test
+# Ensure dates represent consistent quarterly data
+test_results$quarterly_consistency <- test_that("Dates represent consistent and complete quarterly data", {
+  # Convert dates to year and quarter
+  dates <- as.Date(data$Date)
+  year_quarters <- paste0(format(dates, "%Y"), "-Q", ceiling(month(dates) / 3))
+  
+  # Generate a complete sequence of year-quarters
+  start_date <- min(dates)
+  end_date <- max(dates)
+  full_quarters <- seq.Date(start_date, end_date, by = "quarter")
+  full_year_quarters <- paste0(format(full_quarters, "%Y"), "-Q", ceiling(month(full_quarters) / 3))
+  
+  # Check if all year-quarters are present
+  missing_quarters <- setdiff(full_year_quarters, year_quarters)
+  expect_true(length(missing_quarters) == 0, info = paste("Missing quarters:", paste(missing_quarters, collapse = ", ")))
+})
+Explanation of Changes
+Create Year-Quarter Identifiers:
+Each date is converted to a year-quarter format (e.g., 2023-Q1 for the first quarter of 2023).
+Generate Expected Year-Quarters:
+A sequence of quarters is generated between the earliest (start_date) and latest (end_date) dates in the dataset.
+Compare Actual vs. Expected:
+The test checks for any missing year-quarters in the dataset.
+Informative Error Messages:
+If any quarters are missing, the test outputs them in the error message for easier debugging.
+Example Output
+If there are missing quarters, you might see:
+
+Error: Test failed: 'Dates represent consistent and complete quarterly data'
+Missing quarters: 2005-Q2, 2007-Q3
+This output helps identify where data gaps exist, so you can address them. Let me know if further adjustments are needed!
+
+
+
+
+
+
