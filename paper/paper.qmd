@@ -217,11 +217,11 @@ We can see that in the last table of estimated coefficients, the VAR model estim
 
 ## Actual vs. Predicted Confidence Indexes
 
-In order to determine predictive performance of this model, we can look at the predicted confidence indexes as given by the VAR model compared to the observed confidence indexes we purposely omitted form the dataset. This can be seen in @fig-predicted. Here we ask the VAR to predict the next 8 quarters of one-year confidence indexes. 
+In order to determine predictive performance of this model, we can look at the predicted confidence indexes as given by the VAR model compared to the observed confidence indexes we purposely omitted form the dataset. This can be seen in @tbl-predicted. Here we ask the VAR to predict the next 8 quarters of one-year confidence indexes. 
 
 ```{r}
-#| label: fig-predicted
-#| fig-cap: Model summary of the predicted relation of consumer confidence in the stock market and several economic factors.
+#| label: tbl-predicted
+#| tbl-cap: Model summary of the predicted relation of consumer confidence in the stock market and several economic factors.
 #| echo: false
 #| warning: false
 #| message: false
@@ -244,15 +244,15 @@ results_df <- data.frame(
 rmse <- sqrt(mean((results_df$Predicted - results_df$Actual)^2))
 
 # Add a row for RMSE
-results_with_rmse <- rbind(
-  results_df,
-  data.frame(Time = "RMSE", Predicted = rmse, Actual = NA)
-) |>
-  kable(col.names = c("Time", "Predicted", "Actual"))
+results_df <- results_df |>
+  mutate(Time = as.character(Time)) |>
+  add_row(
+    Time = "RMSE",
+    Predicted = rmse,
+    Actual = NA
+  )
 
-# Print the table
-print(results_with_rmse)
-
+results_df
 ```
 This result shows us that the model does not have the most powerful predictive performance. Note that this model was optimized (discussed in the appendix) and these residual errors being so large indicates that prediction of these confidence indexes is difficult based on the variables we used. However, the model is trying to predict the next two years of confidence indexes which leads into 2020 and 2021. It is very important to note that 2020 and 2021 were in the middle of the COVID-19 pandemic and it is hard to force this model to reflect such a turbulent time in the US economy. Therefore, these somewhat large residuals do not justify this model as insufficient but rather predict the confidence index for the economy without having gone through COVID-19. 
 
@@ -341,8 +341,7 @@ residuals_plot <- ggplot(residuals_long, aes(x = time, y = Residual, color = Var
   ) +
   theme(legend.position = "none")
 
-# Print the plot
-print(residuals_plot)
+residuals_plot
 
 ```
 
