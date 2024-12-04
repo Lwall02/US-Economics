@@ -48,5 +48,4 @@ economic_data <- data.frame(
   Confidence_Index = confidence_index
 )
 
-# View the simulated data
 head(economic_data)
