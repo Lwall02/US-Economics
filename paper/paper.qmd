@@ -217,11 +217,11 @@ We can see that in the last table of estimated coefficients, the VAR model estim
 
 ## Actual vs. Predicted Confidence Indexes
 
-In order to determine predictive performance of this model, we can look at the predicted confidence indexes as given by the VAR model compared to the observed confidence indexes we purposely omitted form the dataset. This can be seen in @tbl-predicted. Here we ask the VAR to predict the next 8 quarters of one-year confidence indexes. 
+In order to determine predictive performance of this model, we can look at the predicted confidence indexes as given by the VAR model compared to the observed confidence indexes we purposely omitted form the dataset. This can be seen in @fig-predicted. Here we ask the VAR to predict the next 8 quarters of one-year confidence indexes. 
 
 ```{r}
-#| label: tbl-predicted
-#| tbl-cap: Model summary of the predicted relation of consumer confidence in the stock market and several economic factors..
+#| label: fig-predicted
+#| fig-cap: Model summary of the predicted relation of consumer confidence in the stock market and several economic factors.
 #| echo: false
 #| warning: false
 #| message: false
@@ -267,13 +267,13 @@ Another unexpected result is the positive relationship between unemployment incr
 ## Economic Variables Are Poor Predictors of Market Confidence
 Despite spending time to choose a model with normalized errors and the smallest mean square errors based on predictions, this model still does not perform well and it's interpretation lacks good understanding from an investors standpoint. It indicates that these economic factors are not at all good predictors of market confidence. It shows that the market is not influenced by these economic factors alone and there is a much more complex and intricate system of factors that play into how an investor may feel about the future. It would have been nice to find that the most common economic statistics, like GDP growth or the VIX, play a large role in ones confidence in the market, but there is no obvious linear relationship. 
 
-All things considered, there is a still a valuable outcome to this paper and it is that "hard" economic statistics are not enough to be able to predict whether an individual feels confident that the market will increase in one year. It shows that our suspicions may have been true that any confidence or lack of confidence in the market come from other places. Perhaps it is the knowledge of smaller sectors of the market or maybe that a sort of market psychology is a better predictor. The only concrete results we can see from this paper is that unemployment has a positive effect on market confidence and that previous market confidence is the biggest predictor of its future.
+## Takeaways
+All things considered, there is a still a valuable outcome to this paper and it is that "hard" economic statistics are not enough to be able to predict whether an individual feels confident that the market will increase in one year. It shows that our suspicions may have been true that any confidence or lack of confidence in the market come from other places. Perhaps it is the knowledge of smaller sectors of the market or maybe that a sort of market psychology is a better predictor. The only concrete results we can see from this paper is that unemployment has a positive effect on market confidence and that previous market confidence is the biggest predictor of its future. This indicates that the future outlook on the market is more psychological and less responsive to economic fundamentals than we might have expected. 
 
 ## Weaknesses and next steps {#sec-limitations}
+Despite considerable efforts to develop a robust model, its predictive power remains limited. This limitation may stem from several factors. One potential reason is that the model attempts to predict outcomes during a period when COVID-19 was at its peak, which may have introduced unique, unaccounted-for influences on market confidence. Additionally, it is possible that the economic factors included in the model are simply not strongly related to market confidence. Another important consideration is that the model relies solely on quantitative data, overlooking the potential impact of categorical factors that could play a crucial role in predicting the one-year confidence index.
 
-Weaknesses and next steps should also be included.
-
-\newpage
+There are several next steps that could enhance this study. First, expanding the model to incorporate additional quantitative economic factors, such as industry-specific data, could provide a more comprehensive understanding of market confidence. Moreover, given our findings that market confidence may be influenced by psychological factors, incorporating elements from behavioral economics, such as investor sentiment and speculation, could improve prediction accuracy. It is also possible that the predictive challenges stem from the model's inability to capture complex, non-linear relationships. In such a case, leveraging machine learning techniques might help identify and model these intricate patterns. Finally, some of the unexpected findings, such as the positive relationship between rising unemployment and market confidence, merit further exploration to better understand the underlying causes and implications.\newpage
 
 \appendix
 
@@ -290,7 +290,7 @@ Lastly, and most importantly, the documentation for this data and survey details
 
 
 # Model details {#sec-model-details}
-@tbl-summary shows the summary output of the VAR model discussed above. Note that the model specific to this paper is last output of estimated coefficients where the one-year confidence index is a function of all other variables at time $t-1$. 
+@fig-summary shows the summary output of the VAR model discussed above. Note that the model specific to this paper is last output of estimated coefficients where the one-year confidence index is a function of all other variables at time $t-1$. 
 
 The first step in creating the VAR model, after deciding on the VAR, was to normalize our data. In other words, we needed to transform our data such that there was a constant mean across the time span of our data. To do this we 'differenced' all our data using the `acf.test` from the `vars` package in order that every dataset was stationary with p-value less than 0.05. Once stationary, we can assume that each dataset has a roughly constant mean and we can continue with the VAR model. Note that core CPI and unemployment rate needed to be differenced twice to become stationary. The VIX and GDP growth rate needed to be differenced once. And the federal funds effective rate data did not need to be differenced.
 
@@ -301,16 +301,13 @@ Now to choose the ideal model for this paper, we set out to find the simplest mo
 In conclusion of the development of this model, we had originally incorporated all 5 of the economic statistics with up to 9 lag compenents and we ended up exluding the core CPI and keeping only 1 lag component. 
 
 ```{r}
-#| label: tbl-summary
-#| tbl-cap: Model summary of the predicted relation of consumer confidence in the stock market and several economic factors..
+#| label: fig-summary
+#| fig-cap: Model summary of the predicted relation of consumer confidence in the stock market and several economic factors..
 #| echo: false
 #| warning: false
 #| message: false
-library(modelsummary)
-# Read Model
-# analysis_model <- readRDS(here::here("models/best_var_model.rds"))
-summary(analysis_model)
 
+summary(analysis_model)
 ```
 
 ## Diagnostics
