@@ -4,6 +4,8 @@
 # Date: 3 Decemeber 2024
 # Contact: liam.wall@mail.utoronto.ca
 # License: MIT
+# Pre-requisites: Download the analysis data from data/analysis_data
+
 
 #### Workspace setup ####
 library(tidyverse)
