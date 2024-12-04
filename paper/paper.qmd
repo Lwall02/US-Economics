@@ -6,7 +6,7 @@ author:
 thanks: "Code and data are available at: https://github.com/Lwall02/US-Economics"
 date: today
 date-format: long
-abstract: "Over the pervious decades, the investor being able to forecast the US stock market has been a way to become very successful very fast, however we rarely focus on being able to predict how the stock market can forecast the investor. This paper investigates how well hard statistics, in regards to economics, can predict a soft statistic, the consumer confidence index in the stock market for the next year. Using the Federal Reserve Economic Data API and a long time survey managed by the Yale International Center for Finance, we employ a vector autoregression we find eveidence that despite a large effort to find a good predictive model, the best predictor of the consumer confidence index is last year's consumer confidence index. This paper also identifies nuances in the time series of some of the variables used in analysis and shows investor's just how difficult consistent predictive modeling is in economics."
+abstract: "Over the pervious decades, an investor being able to forecast the US stock market has been a way to become very successful very fast, however we rarely focus on being able to predict how the stock market can forecast the investor. This paper investigates how well \"hard\" statistics, in regards to economics, can predict a soft statistic: the investor's confidence in the stock market for the next year. Using the Federal Reserve Economic Data (FRED) API and a long time survey managed by the Yale International Center for Finance, we employ a vector autoregression model and find that despite a large effort to find a good economic predictors, the best predictor of the investor's confidence index is last quarter's investor confidence index. This paper also identifies unexpected positive relationships of some of the variables used in analysis and shows just how difficult consistent predictive modeling is in economics."
 format: pdf
 number-sections: true
 bibliography: references.bib
@@ -26,8 +26,11 @@ library(arrow)
 library(dplyr)
 library(fredr)
 library(vars)
+library(kableExtra)
 
 full_data <- read_parquet(here::here("data/analysis_data/analysis_data.parquet"))
+analysis_model <- readRDS(here::here("models/best_var_model.rds"))
+
 ```
 
 
@@ -45,19 +48,19 @@ The remainder of this paper is structured as follows. @sec-data discusses the ra
 
 # Data and Measurement {#sec-data}
 
-This paper uses six datasets to begin its analysis. Five datasets are provided through the Federal Reserve Bank of St. Louis, specifically through the Federal Reserve Economic Data (FRED) API, and one dataset is provided by the Yale International Center for Finance. The FRED API provides easy access to all of the Federal Reserve Bank of St. Louis's datasets which include current and historical financial data for the US all around the world. In particular in this paper we obtain datasets regarding core consumer price index, real GDP growth rate, the VIX valuation, the federal funds effective rate, and the unemployment rate. From Yale's International Center for Finance we obtain a dataset regarding the estimated individual and institutional confidence index in the US stock market.
+This paper uses six datasets to begin its analysis. Five datasets are provided through the Federal Reserve Bank of St. Louis, specifically through the Federal Reserve Economic Data (FRED) API, and one dataset is provided by the Yale International Center for Finance. The FRED API provides easy access to all of the Federal Reserve Bank of St. Louis's datasets, which include current and historical financial data for the US and all around the world. In particular in this paper we obtain datasets on the core consumer price index, real GDP growth rate, the VIX valuation, the federal funds effective rate, and the unemployment rate. From Yale's International Center for Finance we obtain a dataset regarding the estimated individual and institutional confidence index in the US stock market.
 
 All data analysis was done through R [@citeR] with the aid of the following packages: `tidyverse` [@citetidyverse], `dplyr` [@dplyr], `ggplot2` [@citeggplot2], `knitr` [@citeknitr], `vars` [@vars], `arrow` [@arrow], `kableExtra` [@citekableExtra], and `janitor` [@citejanitor]. Moreover, the FRED API was accessed using the package `fredr` [@fredr] and the shiny web app associated with this paper was made with the aid of the `shiny` package [@citeshiny].
 
 ## FRED API
-In order to first obtain data from the Federal Reserve Bank of St. Louis, we were able to use the `fredr` package to access the API and easily obtain any FRED datasets. In order to use their API, we first needed to create an API key through the FRED's website [FREDwebsite]. After saving and storing the key, we can then use the `fredr` package to obtain the data. We use a code associated with each and every dataset on the FRED website to quickly download the dataset through R. We can further specify the dates we are looking for as well as the frequency of the data. To have consistent data across all variables, we use quarterly data in the paper. This gives us data for each year on January 1, April 1, July 1, and October 1.
+In order to first obtain data from the Federal Reserve Bank of St. Louis, we were able to use the `fredr` package to access the API and easily obtain any FRED datasets. In order to use their API, we first needed to create an API key through the FRED's website (https://fred.stlouisfed.org). After saving and storing the key, we can then use the `fredr` package to obtain the data. We use a code associated with each dataset on the FRED website to quickly download the dataset through R. We can further specify the dates we are looking for as well as the frequency of the data. To have consistent data across all variables, we use quarterly data in the paper. This gives us data for each year on January 1, April 1, July 1, and October 1. We take data from January 1, 1990 to January 1, 2020.
 
-The process of obtaining the data from the FRED API is the exact same for each of the five FRED datasets. Below is a discussion of the value and measurement of the dataset.
+The process of obtaining the data from the FRED API is the exact same for each of the five FRED datasets. Below is a discussion of the value and measurement of the datasets.
 
 ### Real US GDP Growth Rate and Measurement
-The Real Growth Domestic Product (GDP) growth rate measures how the inflation-adjusted value of goods and services produced in an economy changes over a specific period, typically from one quarter to the next or year-over-year. It’s one of the most widely used indicators to gauge economic performance. In this paper, we downloaded the US's Real GDP dataset from FRED and obtained the percent change of each quarter's real GDP to that of one year ago. Specifically we calculated (Real GDP in current quarter - Real GDP in quarter 1 year ago)/(Real GDP in quarter 1 year ago). 
+The US Real Growth Domestic Product (GDP) growth rate measures how the inflation-adjusted value of goods and services produced in the US economy changes over a specific period, typically from one quarter to the next or year-over-year. It’s one of the most widely used indicators to gauge economic performance. In this paper, we downloaded the US's Real GDP dataset from FRED and obtained the percent change of each quarter's real GDP to that of one year ago. Specifically we calculated (Real GDP in current quarter - Real GDP in the quarter 1 year ago)/(Real GDP in the quarter 1 year ago). 
 
-The US's Real GDP data we obtain from FRED is in units of billions of chained 2017 dollars, seasonally adjusted annual rate. What this means is that all data in dollars from this dataset is expressed as their purchasing power in 2017, hence adjusted for inflation up to 2017. The annual rate simply means that the GDP listed for each quarter is the estimated or extended annual rate. Since we are looking at the growth rate, the data in this paper is in percents and we do not need to focus on the units of Real GDP.
+The US's Real GDP data we obtain from FRED is in units of "billions of chained 2017 dollars, seasonally adjusted annual rate." What seasonally adjusted means is that all data in dollars from this dataset is expressed as their purchasing power in 2017, meaning adjusted for inflation up to 2017. The annual rate simply means that the GDP listed for each quarter is the estimated annual GDP. Since we are looking at the growth rate, the data in this paper is in percents and we do not need to focus on the units of Real GDP but rather how it chnages each quarter. [@gdp]
 
 We can see the Real GDP Growth Rate for all years considered in this dataset below @fig-gdp-raw
 ```{r}
@@ -73,9 +76,9 @@ plot.ts(gdp_ts,
 ```
 
 ### Core CPI Data and Measurement
-The Core Consumer Price Index (Core CPI) is a measure of inflation that tracks the change in prices for a basket of goods and services, excluding food and energy items. Food and energy prices tend to be highly volatile and can fluctuate significantly due to factors like weather conditions, geopolitical events, or supply disruptions (e.g., oil price shocks or crop failures). By excluding these items, Core CPI aims to provide a clearer picture of underlying, long-term inflation trends that are not distorted by these short-term price movements. Core CPI is one of the most widely used measures of inflation because it is considered a more reliable indicator of the general inflation trend. Economists and policymakers often use Core CPI to gauge inflation pressures that are likely to affect the economy in the long term.
+The Core Consumer Price Index (Core CPI) is a measure of inflation that tracks the change in prices for a ttypical basket of goods and services, excluding food and energy items. Food and energy prices tend to be highly volatile and can fluctuate significantly due to factors like weather conditions, geopolitical events, or supply disruptions (like oil price shocks or crop failures). By excluding these items, Core CPI is able to provide a clearer picture of long-term inflation trends that are not distorted by these short-term price movements. Core CPI is one of the most widely used measures of inflation because it is considered a more reliable indicator of the general inflation trend.
 
-Core CPI is calculated using the same methodology as the overall CPI but with food and energy prices removed. The Bureau of Labor Statistics (BLS) collects data on prices from a wide range of goods and services purchased by urban consumers and lists the core cpi as the percent increase of the typical basket of these goods and services from a listed baseline year. In this case 1984 is the baseline year so a core cpi of 264 implies that the typical basket of goods and services is 164% more expensive than it was is 1984.
+Core CPI is calculated using the same methodology as the overall CPI but with food and energy prices removed. The Bureau of Labor Statistics collects data on prices from a wide range of goods and services purchased by urban consumers and lists the Core CPI as the percent increase of the cost of a typical basket of goods and services from a listed baseline year. In this case 1984 is the baseline year so a Core CPI of 264 at time $t$ implies that the typical basket of goods and services is 164% more expensive at time $t$ than it was is 1984. [@cpi]
 
 We can see the Core CPI for all years considered in this dataset below @fig-cpi-raw
 ```{r}
@@ -91,9 +94,9 @@ plot.ts(cpi_ts,
 ```
 
 ### Unemployment Rate and Measurement
-The unemployment rate measures the number of unemployed person in the US as a percentage of the labor force. Labor force data are restricted to people 16 years of age and older, who currently reside in 1 of the 50 states or the District of Columbia, who do not reside in institutions (e.g., penal and mental facilities, homes for the aged), and who are not on active duty in the Armed Forces.
+The unemployment rate measures the number of unemployed persons in the US as a percentage of the labor force. The labor force label is restricted to people 16 years of age and older, who currently reside in 1 of the 50 states or the District of Columbia, who do not reside in institutions (like mental facilities or elderly homes), and who are not on active duty in the Armed Forces. [@unemp]
 
-We can see the Unemployment Rate for all years considered in this dataset below @fig-unemp-raw
+We can see the Unemployment Rate for the years considered in the dataset in @fig-unemp-raw.
 ```{r}
 #| label: fig-unemp-raw
 #| fig-cap: The quarterly Unemployment Rate for 1990 to 2024 measured as a percent of the labor force. 
@@ -107,11 +110,11 @@ plot.ts(unemp_ts,
 ```
 
 ### Federal Funds Effective Rate
-The Federal Funds Rate is the interest rate at which depository institutions, such as commercial banks, lend reserves to each other overnight. These reserves are balances held at Federal Reserve Banks. When a bank has surplus reserves, it lends to other banks that need additional liquidity to meet reserve requirements. The rate at which these transactions occur is determined through negotiations between the lending and borrowing banks. The Federal Funds Effective Rate is the weighted average of all such rates across the market, and while it is largely influenced by market forces, the Federal Reserve may manipulate it to adjust the rate to its target. This target is determined by the Federal Open Market Committee (FOMC), which meets eight times a year to assess economic conditions and set the federal funds rate target. The rate is a central tool for influencing the broader economy, impacting the cost of borrowing and the level of liquidity in the financial system.
+The Federal Funds Rate is the interest rate at which depository institutions, such as commercial banks, lend reserves to each other overnight. These reserves are balances held at Federal Reserve Banks. When a bank has surplus reserves, it lends to other banks that need additional liquidity to meet reserve requirements. The rate at which these transactions occur is determined through negotiations between the lending and borrowing banks. The Federal Funds Effective Rate is the weighted average of all such rates across the market, and while it is largely influenced by market forces, the Federal Reserve may manipulate it to adjust the rate to its target. This target is determined by the Federal Open Market Committee (FOMC), which meets eight times a year to set the federal funds rate target. The rate is a central tool for influencing the broader economy, impacting the cost of borrowing and the level of liquidity in the financial system.
 
-The Federal Reserve manipulates the federal funds rate through buying or selling government bonds to influence the liquidity available in the market. If the economy is overheating, the FOMC may sell government bonds to reduce liquidity and raise the federal funds rate. On the other hand, if the economy is sluggish, the FOMC may buy bonds to increase liquidity and lower the federal funds rate, encouraging borrowing and investment. The federal funds rate is the most important interest rate in the U.S. financial system, as it influences other rates like, mortgages, loans, and savings rates. Changes in the federal funds rate can affect consumer wealth, confidence, and overall economic activity, making it a critical tool for the Federal Reserve in managing the economy's growth while maintaining price stability and maximum employment, as mandated by Congress.
+The Federal Reserve manipulates the federal funds rate through buying or selling government bonds to influence the liquidity available in the market. If the economy is overheating, the FOMC may sell government bonds to reduce liquidity and raise the federal funds rate. On the other hand, if the economy is sluggish, the FOMC may buy bonds to increase liquidity and lower the federal funds rate, encouraging borrowing and investment. The federal funds rate is the most important interest rate in the U.S. financial system, as it influences other rates like, mortgages, loans, and savings rates. Changes in the federal funds rate can affect consumer wealth, confidence, and overall economic activity, making it a critical tool for the Federal Reserve in managing the economy's growth. [@eff]
 
-We can see the Unemployment Rate for all years considered in this dataset below @fig-eff-raw
+We can see the Federal Funds Effective Rate for all years considered in this dataset below @fig-eff-raw.
 ```{r}
 #| label: fig-eff-raw
 #| fig-cap: The quarterly Federal Funds Effective Rate from 1990 to 2024. 
@@ -125,9 +128,9 @@ plot.ts(eff_ts,
 ```
 
 ### The VIX Dataset and Measurement
-The VIX (Volatility Index) measures the market’s expectation of near-term volatility based on the prices of stock index options. Often referred to as the "fear gauge," the VIX reflects the market's consensus on the level of volatility expected in the coming 30 days. It is calculated by the Chicago Board Options Exchange (CBOE) using the prices of options on the S&P 500 index. The VIX is expressed as an annualized percentage, which indicates the expected volatility (in percentage points) over the next 30 days. The formula to calculate the VIX incorporates the prices of both calls and puts, weighing options with different strike prices and maturities. Higher VIX values indicate a higher expected volatility, signaling increased uncertainty or fear in the market, while lower values suggest stability or confidence. As such, the VIX is widely used by investors, analysts, and policymakers as a gauge of market sentiment, helping to assess the potential for market swings and guide investment decisions.
+The VIX (Volatility Index) measures the market’s expectation of near-term volatility based on the prices of stock index options. Often referred to as the "fear gauge," the VIX reflects the consensus on the level of volatility expected in the coming 30 days. It is calculated by the Chicago Board Options Exchange (CBOE) using the prices of options on the S&P 500 index. The VIX is expressed as an annualized percentage, which indicates the expected volatility over the next 30 days. Higher VIX values indicate a higher expected volatility, signaling increased uncertainty or fear in the market, while lower values suggest stability or confidence. [@vix]
 
-We can see the VIX for all years considered in this dataset below @fig-vix-raw
+We can see the VIX for all years considered in this dataset below @fig-vix-raw.
 ```{r}
 #| label: fig-vix-raw
 #| fig-cap: The quarterly VIX from 1990 to 2024. 
@@ -141,12 +144,12 @@ plot.ts(vix_ts,
 ```
 
 ## Yale International Center for Finance
-The sixth and last dataset used in this paper comes from the Yale International Center for Finance (ICF). Specifically it comes from survey data that the ICF publishes coming from a longstanding survey of wealthy investors and institutions. From 1989 to 1990 the survey was taken from a sample of investors purchased from a survey company called W.S. Ponton, Inc. and in 1999 the sample changed to a survey of wealth American Investors purchased from Survey Sampling, Inc. Both individuals and instituions were included in the sample and their responses are recorded separately. 
+The sixth and last dataset used in this paper comes from the Yale International Center for Finance (ICF). Specifically it comes from survey data that the ICF publishes coming from a longstanding survey of wealthy American investors and American institutions. Both individuals and institutions are included in the sample and their responses are recorded separately. 
 
-Starting in July 2001, the beginning date of analysis for this paper, the survey was given monthly and the results were the average of the previous six months of surveys. For example the number for January 2018 is an average of results from surveys between August 2017 and January 2018. We go into more detail about the questions and calculation of the answers in the next section as well as in the appendix. 
+Starting in July 2001, the beginning date of analysis for this paper, the survey was given monthly and its results are the average of the previous six months of surveys. For example the number for January 2018 is an average of results from surveys between August 2017 and January 2018. We go into more detail about the questions and calculation of the answers in the next section as well as in the appendix. [@survey]
 
-### US Confidence 
-The data for the estimate of the US confidence index in the stock market for the next year comes from the survey data released by the ICF. Specifically, the index is the percent of people who said that the DOW would increase one year from taking the survey. This question was always asked on the survey from 1989 to present. The question is offered to both institutions and wealthy investors, however they consistently display similar findings. 
+### US One-Year Confidence Index
+The data for the estimate of the US confidence index in the stock market for the next year comes from the survey data released by the ICF. Specifically, this confidence index is the percent of people who said that the DOW would increase one year from taking the survey. This question was always asked on the survey from 1989 to present. The question is offered to both institutions and wealthy investors, and they consistently display similar findings. More on this survey question and it's calculation can be found in the appendix. [@survey]
 
 Below we can see the one year confidence index for institutions @fig-conf-raw
 ```{r}
@@ -164,16 +167,20 @@ plot.ts(conf_ts,
         ylab = "Index")     # Label for the y-axis```
 ```
 
+## Cleaned Dataset
+The cleaned and concise dataset used in this paper and especially for the model is table with 7 columns and 76 observations. That is 4 observations for each year from January 1, 2001 to January 1, 2020. The reason for starting in 2001 is because prior to 2001, the ICF survey only collected data every six months and we aim to look at quarterly data in this paper. The reason for ending in 2020 is because the COVID-19 pandemic had a very large effect on the US economy and thus on every variable in this analysis in different ways. To try and get a better predictive model, we will only consider these years because the confounding factors of COVID-19 are beyond the scope of this paper. 
+
+The 7 columns indicate the date, core CPI, GDP growth rate, federal funds effective rate, the VIX, the unemployment rate, and the one-year confidence index. 
 
 # Model {#sec-model}
 
-As the purpose of this paper is to investigate the relationship between various economic factors and the U.S. consumer confidence index in the stock market, we will employ a model that allows us to examine how these factors contribute to predicting investor sentiment over time. Specifically, we aim to understand how variables such as GDP growth, unemployment rates, the VIX, and the core CPI interact with the consumer confidence index. By using this information, we will develop a predictive model that estimates the future confidence index based on current and past economic data. The goal is to determine whether these economic indicators are effective predictors of consumer confidence, or if other factors beyond the economic data—such as investor psychology or external market events—play a larger role in shaping market sentiment.
+As the purpose of this paper is to investigate the relationship between various economic factors and the U.S. consumer confidence index in the stock market, we will employ a model that allows us to examine how these factors contribute to predicting investor sentiment over time. Specifically, we aim to understand how variables such as GDP growth, unemployment rates, the VIX, the federal fund effective rate, and the core CPI interact with the one-year confidence index. By using this information, we will develop a predictive model that estimates the future confidence index based on current and past economic data. The goal is to determine whether these economic indicators are effective predictors of the investor one-year confidence, or if other factors beyond the economic data (such as investor psychology or external market events) play a larger role in shaping this market sentiment.
 
-Here we briefly describe the vector auto regression (VAR) model used to investigate predictors of market confidence. Background details and diagnostics are included in the Appendix.
+We justify the use of the vector auto regression (VAR) model used to investigate predictors of market confidence in the Model Justification section. Background details and diagnostics are included in the Appendix.
 
 ## Model set-up
 
-The particular model that this paper will utilize is a vector auto regression model of consumer one-year confidence index as a function of the economic variables present in our analysis. In particular, the model is as follows:
+The particular model that this paper will utilize is a vector auto regression (VAR) model of the one-year confidence index as a function of the economic variables present in our analysis. In particular, the model is as follows:
 
 \begin{align} 
 confidence_{t} = \beta_0 + \beta_1 gdp_{t-1} + \beta_2 cpi_{t-1} + \beta_3 unemployment_{t-1} \\
@@ -190,40 +197,31 @@ In the above model:
 - $\beta_5$ is the coefficient for the predicted change in confidence index given a one unit increase in the VIX at time $t-1$
 - $\beta_6$ is the coefficient for the predicted change in confidence index given a one unit increase in the One-Year Confidence Index at time $t-1$
 
-Note that we use `vars` to run the regression. Since all of the variables are a function of time, we are running a model on a multivariate time series. Discussion of choosing the lag as well as making sure the input data is appropriate for such a model is all in the appendix.
+Note that this model employs all variables at a lagged time as the predictors. What is most different about this model as opposed to some of the other models we considered is that the predictors are a function of time. Even the one-year confidence index at a lagged time can be a predictor for the current one-year confidence index. Since all of the variables are a function of time, we are running a model on a multivariate time series. Discussion of choosing the lag as well as making sure the input data is appropriate for such a model is all in the appendix.
+
+Note that we use the function `VAR` from the package `vars` to run this regression. 
 
 ### Model justification
 
-The variables chosen for this model—GDP growth rate, core CPI, unemployment rate, VIX, federal funds effective rate, and previous confidence index values—are all grounded in economic theory and literature regarding their influence on consumer confidence. The confidence index reflects individuals' expectations about the stock market, specifically their belief that the Dow Jones will increase over the next year, making it closely linked to these macroeconomic variables. 
+The variables chosen for this model (GDP growth rate, core CPI, unemployment rate, VIX, federal funds effective rate, and previous one-year confidence index values) are all grounded in economic theory and literature regarding their influence on market confidence/sentiment. The one-year confidence index reflects individuals' expectations about the stock market, specifically their belief that the Dow Jones will increase over the next year, making it closely linked to these macroeconomic variables. 
 
 We expect a linear relationship between these variables and the confidence index. Specifically, we anticipate that higher GDP growth and a lower unemployment rate will be associated with higher confidence levels, as they signal economic stability and opportunities. Conversely, increases in the VIX and federal funds rate are expected to reduce confidence, as they indicate higher uncertainty or a tightening economic environment. 
 
-We chose the VAR model because it is able to model the time dependent interplay of multiple interdependent variables. The variables in this analysis are closely related with one another, as well as being dependent on time, and we wanted a model that could reflect this. Not only do the variables effect each other, but more importantly they effect themselves. As the percentage of people who lose confidence in the market increases it is more than likely that percentage will continue to increase as time continues. A similar argument can be made for each of the other variables. That is why we chose to incorporate a lag into the model, seeing that the the values at previous times do have an effect on the value currently.
+We chose the VAR model because it is able to model the time dependent interplay of multiple interdependent variables. The variables in this analysis are closely related with one another, as well as being dependent on time, and we wanted a model that could reflect this. Not only do the variables effect each other, but more importantly they effect themselves. For example, as the percentage of people who lose confidence in the market increases it is more than likely that percentage will continue to increase as time continues. A similar argument can be made for each of the other variables. That is why we chose to incorporate a lag into the model, knowing that the values at previous times do have an effect on the value currently for each variable.
 
 # Results {#sec-results}
 ## Model Coefficients
-After running the regression based on the above model, we receive the following coefficient values as showcased in @tbl-summary. 
-```{r}
-#| label: tbl-summary
-#| tbl-cap: Model summary of the predicted relation of consumer confidence in the stock market and several economic factors..
-#| echo: false
-#| warning: false
-#| message: false
-library(modelsummary)
-# Read Model
-analysis_model <- readRDS(here::here("models/best_var_model.rds"))
-summary(analysis_model)
+After running the regression based on the above model, we receive the following coefficient values as showcased in the Appendix. Note that this model summary displays the coefficients for each variable as a function of all the other variables at time $t-1$. What we are interested in is the very last table of coefficients displaying the one-year confidence index vales as a function of all the other variables at time $t-1$. 
 
-```
-We can see that in the last estimate of coefficients, the VAR model estimates the lagged coefficients for each of the variables including the lagged one-year confidence index as a predictor. What we find it rather surprising that increases in unemployment positively correlate with increases in the stock market confidence. All other variables have less of an effect except for the lagged one-year confidence interval. In fact, it is the only statistically significant finding from this model with a p-value much less than 0.05. Thus, this model tells us that the previous quarter's confidence index is the biggest predictor of the currect confidence index. Followed by the unemployment rate as the second most likely predictor. 
+We can see that in the last table of estimated coefficients, the VAR model estimates the lagged coefficients for each of the variables including the lagged one-year confidence index as a predictor. What we find is rather surprising. Firstly, that increases in unemployment positively correlate with increases in the stock market confidence. All other variables have less of an effect except for the lagged one-year confidence interval. In fact, the lagged one-year confidence interval is the only statistically significant finding from this model with a p-value much less than 0.05. Thus, this model tells us that the previous quarter's confidence index is the biggest predictor of the current confidence index. Followed by the unemployment rate as the second most likely predictor. All other coefficients have relatively high p-values and are thus less significant in prediction of the confidence index. 
 
 ## Actual vs. Predicted Confidence Indexes
 
-In order to determine predictive performance of this model is, we can look at the predicted confidence indexes as given by the VAR model compared to the observed confidence indexes we purposely omitted form the dataset. This can be seen in @fig-predicted.
+In order to determine predictive performance of this model, we can look at the predicted confidence indexes as given by the VAR model compared to the observed confidence indexes we purposely omitted form the dataset. This can be seen in @tbl-predicted. Here we ask the VAR to predict the next 8 quarters of one-year confidence indexes. 
 
 ```{r}
-#| label: fig-predicted
-#| fig-cap: Model summary of the predicted relation of consumer confidence in the stock market and several economic factors..
+#| label: tbl-predicted
+#| tbl-cap: Model summary of the predicted relation of consumer confidence in the stock market and several economic factors..
 #| echo: false
 #| warning: false
 #| message: false
@@ -249,24 +247,27 @@ rmse <- sqrt(mean((results_df$Predicted - results_df$Actual)^2))
 results_with_rmse <- rbind(
   results_df,
   data.frame(Time = "RMSE", Predicted = rmse, Actual = NA)
-)
+) |>
+  kable(col.names = c("Time", "Predicted", "Actual"))
 
 # Print the table
 print(results_with_rmse)
 
 ```
-Although this does not seem to be the most accurate model predictions, considering how nosiy and volatil
-
+This result shows us that the model does not have the most powerful predictive performance. Note that this model was optimized (discussed in the appendix) and these residual errors being so large indicates that prediction of these confidence indexes is difficult based on the variables we used. However, the model is trying to predict the next two years of confidence indexes which leads into 2020 and 2021. It is very important to note that 2020 and 2021 were in the middle of the COVID-19 pandemic and it is hard to force this model to reflect such a turbulent time in the US economy. Therefore, these somewhat large residuals do not justify this model as insufficient but rather predict the confidence index for the economy without having gone through COVID-19. 
 
 # Discussion {#sec-discussion}
 
-## First discussion point {#sec-first-point}
+## One-Year Market Confidence Index at Time t-1 is the Best Predictor
+The most statistically significant result of the model is that the confidence index at time $t-1$ is the most predictive variable for confidence at time $t$. This self-reinforcing relationship suggests that market confidence is largely shaped by past sentiment rather than by the economic variables included in the model. This result is both expected and unexpected. On one hand, it is unsurprising that factors beyond traditional economic indicators—such as public sentiment and behavioral patterns—play a significant role in shaping investor outlooks. Investors often rely on social cues and collective behavior, which may carry more weight than metrics like GDP growth, the VIX, or interest rates. On the other hand, it is surprising that past confidence, a largely subjective measure, outweighs variables with direct impacts on economic performance. This raises a key question: why would investor sentiment continue to drive confidence, when forward-looking investors typically aim to act ahead of the crowd? It underscores the complex interplay between psychology and market behavior, where perceptions often matter more than objective data.
 
-If my paper were 10 pages, then should be be at least 2.5 pages. The discussion is a chance to show off what you know and what you learnt from all this. 
+## Unemployment Rate and One-Year Confidence Index Exhibit a Positive Relationship
+Another unexpected result is the positive relationship between unemployment increases and market confidence. This finding challenges the expectations we laid out earlier in the paper. We would typically associate rising unemployment with declining confidence due to its negative implications for economic stability and personal financial security. The explanation for such a finding can lie in many areas. Perhaps investors consider the context more than model can. For example, investors may act this way because rising unemployment could lead to government stimuli or even interest rate cuts. Not only is this positive relationship surprising alone but also in that it was the second best predictor of market confidence, beating out GDP growth rate and the VIX. 
 
-## Second discussion point
+## Economic Variables Are Poor Predictors of Market Confidence
+Despite spending time to choose a model with normalized errors and the smallest mean square errors based on predictions, this model still does not perform well and it's interpretation lacks good understanding from an investors standpoint. It indicates that these economic factors are not at all good predictors of market confidence. It shows that the market is not influenced by these economic factors alone and there is a much more complex and intricate system of factors that play into how an investor may feel about the future. It would have been nice to find that the most common economic statistics, like GDP growth or the VIX, play a large role in ones confidence in the market, but there is no obvious linear relationship. 
 
-## Third discussion point
+All things considered, there is a still a valuable outcome to this paper and it is that "hard" economic statistics are not enough to be able to predict whether an individual feels confident that the market will increase in one year. It shows that our suspicions may have been true that any confidence or lack of confidence in the market come from other places. Perhaps it is the knowledge of smaller sectors of the market or maybe that a sort of market psychology is a better predictor. The only concrete results we can see from this paper is that unemployment has a positive effect on market confidence and that previous market confidence is the biggest predictor of its future.
 
 ## Weaknesses and next steps {#sec-limitations}
 
@@ -280,16 +281,73 @@ Weaknesses and next steps should also be included.
 
 
 # Additional data details
+## ICF Survey Details
+In the US one-year confidence index dataset, the data all comes from a monthly survey given by the ICF to a sample of wealthy investors and institutions in America. It is important to understand that this data from this dataset is not a true reflection of the market confidence but rather an aggregated estimate from active investors. This survey has been conducted since 1989 and the ICF publishes all its results. This paper only uses data from one question. The survey question pertaining to this paper is exactly: How much of a change in percentage terms do you expect in the following (use + before your number to indicate an expected increase, or - to indicate an expected decrease, leave blanks where you do not know). The surveyed will then respond to five categories putting down a percent as an answer. The five categories are: in 1 month, in 3 months, 6 months, in 1 year, and in 10 years. Although the surveyed people will answer all five questions, the one-year confidence index is calculated as the percentage of respondents who give a number strictly greater than zero for "in one year." [@survey]
+
+Since 1989, the wording of this question has not changed except for the addition of the "in 1 month" and "in 10 years" category. This survey question is deserving of its own section because there are many confounding factors that are to be considered when examing the one-year confidence index. For example we do not know the magnitude of each respondents response. It is possible that every respondent who answers with a positive number could have a number very close to zero. In this way, can we confidently say that these people are all "confident" in the market increasing in the coming year? 
+
+Lastly, and most importantly, the documentation for this data and survey details says that the question is presented in the exact format as above. However, in the documentation explaining its calculation, it mentions that this is the percentage of people expecting the DOW to increase in one year's time. The issue here is that we now assume the respondents answer is based on their confidence in the DOW. We now have to ask is this answer to be reflected across the whole market? It is understood the DOW does reflect the market to some extent however is this question asked properly enough in order to make that assumption? The issue is that the documentation on the survey question does not make it explicitly clear the respondent is speaking of the only the DOW or the answer is meant to be generalized to the entire US stock market/economy. Clearly the statistic is used for such purposes but it begs the question anyways. 
+
 
 # Model details {#sec-model-details}
+@tbl-summary shows the summary output of the VAR model discussed above. Note that the model specific to this paper is last output of estimated coefficients where the one-year confidence index is a function of all other variables at time $t-1$. 
 
-## Posterior predictive check
+The first step in creating the VAR model, after deciding on the VAR, was to normalize our data. In other words, we needed to transform our data such that there was a constant mean across the time span of our data. To do this we 'differenced' all our data using the `acf.test` from the `vars` package in order that every dataset was stationary with p-value less than 0.05. Once stationary, we can assume that each dataset has a roughly constant mean and we can continue with the VAR model. Note that core CPI and unemployment rate needed to be differenced twice to become stationary. The VIX and GDP growth rate needed to be differenced once. And the federal funds effective rate data did not need to be differenced.
 
+The second step in creating the model was to determine the lag in our model. That is determine the number of lags for each variable we wanted to include. To do this we did employed an `acf.test` fromthe `vars` package which tests for the optimal lag in each variable. It turns out that the optimal lag among all variables was 9. From there we created two models, one with lag 1 and the other with lag 9. That means the second model included a $t-n$ term on each coefficient for $n={1,...,9}$. We found that they both had a mean square error of approximately 7.33.
 
+Now to choose the ideal model for this paper, we set out to find the simplest model with the lowest mean square error. Since both lag 1 and lag 9 models had similar mean square error we chose the lag 1 model as it is much simpler. To further optimize this model we found that the low variance and very linear behavior of core CPI played almost no role in predicting the outcome of the one-year confidence index. Core CPI consistently had very small coefficient estimates so therefore we excluded it. 
+
+In conclusion of the development of this model, we had originally incorporated all 5 of the economic statistics with up to 9 lag compenents and we ended up exluding the core CPI and keeping only 1 lag component. 
+
+```{r}
+#| label: tbl-summary
+#| tbl-cap: Model summary of the predicted relation of consumer confidence in the stock market and several economic factors..
+#| echo: false
+#| warning: false
+#| message: false
+library(modelsummary)
+# Read Model
+# analysis_model <- readRDS(here::here("models/best_var_model.rds"))
+summary(analysis_model)
+
+```
 
 ## Diagnostics
+To further verify this model is not biased or has too much noise we look at the 'normalness' of its residuals. In @fig-residuals we show that the optimized model has normal residuals. We can see that the residuals display some variance however they all center around 0. There is no evidence of bias in any of the variables. 
 
+```{r}
+#| label: fig-residuals
+#| fig-cap: This facet plot shows the residuals for the VAR model as time increases. We can see these residuals have some variance while consistently oscillating around 0. 
+#| echo: false
+#| warning: false
+#| message: false
 
+library(ggplot2)
+
+# Extract residuals from the VAR model
+residuals_df <- data.frame(time = 1:nrow(residuals(analysis_model)), residuals(analysis_model))
+
+# Reshape data for plotting
+residuals_long <- reshape2::melt(residuals_df, id.vars = "time", variable.name = "Variable", value.name = "Residual")
+
+# Create the plot
+residuals_plot <- ggplot(residuals_long, aes(x = time, y = Residual, color = Variable)) +
+  geom_line() +
+  facet_wrap(~Variable, scales = "free_y", ncol = 1) +  # Separate plots for each variable
+  theme_minimal() +
+  labs(
+    title = "Residuals of the VAR Model by Variable",
+    x = "Time",
+    y = "Residual",
+    color = "Variable"
+  ) +
+  theme(legend.position = "none")
+
+# Print the plot
+print(residuals_plot)
+
+```
 
 
 
