@@ -1,11 +1,10 @@
 #### Preamble ####
-# Purpose: Models... [...UPDATE THIS...]
+# Purpose: Models the economic and confidence index data in order to make predictions
 # Author: Liam Wall
-# Date: 5 March 2024
-# Contact: rohan.alexander@utoronto.ca [...UPDATE THIS...]
+# Date: 3 December 2024
+# Contact: liam.wall@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: [...UPDATE THIS...]
-# Any other information needed? [...UPDATE THIS...]
+# Pre-requisites: Load in the clean dataset from analysis_data
 
 
 #### Workspace setup ####
@@ -149,6 +148,10 @@ rmse_3 <- sqrt(mean((actual - predicted_3)^2))
 print(paste("RMSE:", rmse))
 # 7.315
 
+# model 3 has a similar MSE to model_2 but is much more complicated. For this 
+# reason we choose model_2.
+# model_2 has a better MSE than model_1 and a lower MSE
+# Final choice: model_2
 
 
 
